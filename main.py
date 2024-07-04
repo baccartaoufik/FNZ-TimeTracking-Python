@@ -9,7 +9,7 @@ from PIL import Image
 app = Flask(__name__)
 
 
-engine = create_engine('mysql://remote_user:root@172.16.4.16:3306/Time_tracking')
+engine = create_engine('mysql://admin:0000@172.16.4.17:3306/timetrackingdb')
 Session = sessionmaker(bind=engine)
 session = Session()
 
