@@ -25,9 +25,9 @@ pipeline {
                 branch 'main'
             }
             steps {
- 		withDockerRegistry(credentialsId: 'dockerhub-credentials-fnz-id', url: 'https://index.docker.io/v1/') {
-                        sh 'docker push raniabenabdallah11/flask-app:latest'
-
+                withDockerRegistry(credentialsId: 'dockerhub-credentials-fnz-id', url: 'https://index.docker.io/v1/') {
+                    sh 'docker push raniabenabdallah11/flask-app:latest'
+                }
             }
         }
         
@@ -36,7 +36,7 @@ pipeline {
                 branch 'CI_CD'
             }
             steps {
-                docker run -d --name flask-app -p 5000:5000 flask-app-jenkins
+                sh 'docker run -d --name flask-app -p 5000:5000 flask-app-jenkins'
             }
         }
     }
