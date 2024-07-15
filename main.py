@@ -1,21 +1,27 @@
 from flask import Flask, request, jsonify
+from config import DevelopmentConfig, ProductionConfig
 import os
 import face_recognition
 import numpy as np
 from sqlalchemy import create_engine, Table, MetaData, select
 from sqlalchemy.orm import sessionmaker
 from PIL import Image
+from flask import send_from_directory
+
 
 app = Flask(__name__)
 
 
-engine = create_engine('mysql://remote_user:root@172.16.4.16:3306/Time_tracking')
 Session = sessionmaker(bind=engine)
 session = Session()
 
 # Load user data
 metadata = MetaData()
 utilisateur_table = Table('utilisateur', metadata, autoload_with=engine)
+
+@app.route('/static/images/<filename>')
+def serve_image(filename):
+    return send_from_directory('static/images', filename)
 
 def get_user_photos():
     columns = utilisateur_table.columns.keys()
@@ -141,5 +147,34 @@ def validate():
     
     return jsonify({"error": "No user is found"}), 404
 
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    # Save the uploaded file to the /static/images directory
+    save_path = os.path.join(app.root_path, 'static', 'images', file.filename)
+    file.save(save_path)
+
+    return jsonify({'message': 'File uploaded successfully', 'filename': file.filename}), 200
+
+def create_app():
+    app = Flask(__name__)
+    env = os.getenv('FLASK_ENV', 'development')
+
+    if env == 'production':
+        app.config.from_object(ProductionConfig)
+    else:
+        app.config.from_object(DevelopmentConfig)
+
+    # Initialize other extensions and blueprints here
+
+    return app
+
 if __name__ == '__main__':
+    app = create_app()	
     app.run(debug=True, host='0.0.0.0', port=5000)
