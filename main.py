@@ -10,20 +10,20 @@ app = Flask(__name__)
 
 
 engine = create_engine('mysql://admin:0000@172.16.4.17:3306/timetrackingdb')
-Session = sessionmaker(bind=engine)
-session = Session()
 
-# Load user data
+
 metadata = MetaData()
 utilisateur_table = Table('utilisateur', metadata, autoload_with=engine)
 
-def get_user_photos():
+Session = sessionmaker(bind=engine)
+session = Session()
+
+def get_user_photos(session):
     columns = utilisateur_table.columns.keys()
     print("Available columns:", columns)
     stmt = select(utilisateur_table)
     result = session.execute(stmt)
     
-    # Print the first row to see its structure
     first_row = result.fetchone()
     if first_row:
         print("First row type:", type(first_row))
@@ -100,13 +100,16 @@ def recognize_face(unknown_image, user_encodings):
     results.sort(key=lambda x: x[1], reverse=True)
     return results
 
-user_photos = get_user_photos()
+user_photos = get_user_photos(session)
+
+session.close()
 print("User photos:", user_photos)
 user_encodings = load_image_encodings(user_photos)
 SIMILARITY_THRESHOLD = 50.0
 
 @app.route('/validate', methods=['POST'])
 def validate():
+    session = Session()
     if 'file' not in request.files:
         return jsonify({"error": "No image file provided"}), 400
 
@@ -139,6 +142,7 @@ def validate():
     else:
         print("No recognition results")
     
+    session.close()
     return jsonify({"error": "No user is found"}), 404
 
 if __name__ == '__main__':
