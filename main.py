@@ -5,6 +5,7 @@ import numpy as np
 from sqlalchemy import create_engine, Table, MetaData, select
 from sqlalchemy.orm import sessionmaker
 from PIL import Image
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -17,6 +18,37 @@ utilisateur_table = Table('utilisateur', metadata, autoload_with=engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
+
+UPLOAD_FOLDER = 'static/images'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/upload_photo', methods=['POST'])
+def upload_photo():
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    photo = request.files['photo']
+    
+    if photo.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if photo:
+        filename = secure_filename(photo.filename)
+        photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({'message': 'File uploaded successfully', 'filename': filename}), 200
+        
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    photo = request.files['photo']
+    
+    if photo.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+     
+    if photo:
+        filename = secure_filename(photo.filename)
+        photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({'message': 'File uploaded successfully', 'filename': filename}), 200
 
 def get_user_photos(session):
     columns = utilisateur_table.columns.keys()
@@ -147,3 +179,11 @@ def validate():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+
+
+
+
+
+
